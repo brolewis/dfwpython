@@ -127,14 +127,6 @@ class SixDegrees(object):
                 self.session.commit()
             return character
 
-    def get_character(self, name):
-        name_filter = '%{}%'.format(name.replace(' ', '%').replace('.', ''))
-        query = self.session.query(Character)
-        return query.filter(Character.name.like(name_filter)).first()
-
-    def all_characters(self):
-        return self.session.query(Character).all()
-
     def _get_appearance(self, title, kind):
         query = self.session.query(Appearance)
         appearance = query.filter_by(title=title).first()
@@ -142,6 +134,14 @@ class SixDegrees(object):
             appearance = Appearance(title=title, kind=kind)
             self.session.add(appearance)
         return appearance
+
+    def get_character(self, name):
+        name_filter = '%{}%'.format(name.replace(' ', '%').replace('.', ''))
+        query = self.session.query(Character)
+        return query.filter(Character.name.like(name_filter)).first()
+
+    def all_characters(self):
+        return self.session.query(Character).all()
 
     def find_connection(self, start_name, end_name):
         link = self._shortest_link(start_name, end_name)
@@ -229,5 +229,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     six = SixDegrees()
     if args.load_data:
-        six.load_imdb()
-    play()
+#        six.load_imdb()
+        six.load_ma()
+    else:
+        play()
