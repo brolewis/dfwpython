@@ -1,0 +1,31 @@
+{% extends "bootstrap/base.html" %}
+{% block title %}The Oracle of Kirk - Results{% endblock %}
+{% block content %}
+    <div class="container">
+        <h1>The Oracle of Kirk</h1>
+        <p class="lead">A fun little project to show degrees of separation within the Star Trek Universe</p>
+        <div class="panel panel-primary">
+            <div class="panel-heading">
+                <h3 class="panel-title">
+                    {% if full_link|length %}
+                        {{ end_name }} has a Kirk Number of {{ full_link|length }}
+                    {% else %}
+                        {{ end_name }} has a Kirk Number of Infinity
+                    {% endif %}
+                </h3>
+            </div>
+            <div class="panel-body">
+                <ul>
+                {% set previous = end_name %}
+                {% for sublink in full_link %}
+                    <li>{{ previous }} was in {{ sublink[0] }} with {{ sublink[1] }}</li>
+                    {% set previous = sublink[1] %}
+                {% endfor %}
+                </ul>
+                <div class="text-right">
+                    <a type="submit" class="btn btn-info" href="{{ url_for('index') }}">Search Again</a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

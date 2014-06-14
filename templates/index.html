@@ -1,0 +1,39 @@
+{% extends "bootstrap/base.html" %}
+{% block title %}The Oracle of Kirk{% endblock %}
+{% block styles %}
+    {{ super() }}
+    <link href="//cdnjs.cloudflare.com/ajax/libs/select2/3.4.8/select2.css" rel="stylesheet" />
+{% endblock %}
+{% block scripts %}
+    {{ super() }}
+    <script src="//cdnjs.cloudflare.com/ajax/libs/select2/3.4.8/select2.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $("#start_name,#end_name").select2({allowClear: true, width: "300"});
+        });
+    </script>
+{% endblock %}
+{% block content %}
+    <div class="container">
+        <h1>The Oracle of Kirk</h1>
+        <p class="lead">A fun little project to show degrees of separation within the Star Trek Universe</p>
+        <div class="jumbotron">
+            <form class="form-inline" role="form" action="{{ url_for('index') }}" method="post">
+                {% if search_form.errors %}
+                    <ul class="errors">
+                        {% for field_name, field_errors in search_form.errors|dictsort if field_errors %}
+                            {% for error in field_errors %}
+                                <li>{{ search_form[field_name].label }}: {{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+                {{ search_form.csrf_token }}
+                <div class="form-group">{{ search_form.start_name()|safe }}</div>
+                to
+                <div class="form-group">{{ search_form.end_name()|safe }}</div>
+                <button type="submit" class="btn btn-primary">Search</button>
+            </form>
+        </div>
+    </div>
+{% endblock %}
