@@ -5,14 +5,14 @@ import wtforms
 import wtforms.csrf.session
 import wtforms.ext.sqlalchemy.fields
 # Local
-import bacon
+import oracle
 
 app = flask.Flask(__name__)
 flask_bootstrap.Bootstrap(app)
 app.debug = True
 app.secret_key = 'asdfp98ydlkasdfy8p9dfayh90sdgy879'
 
-six = bacon.SixDegrees()
+six = oracle.SixDegrees()
 
 
 class BaseForm(wtforms.Form):
