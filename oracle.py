@@ -2,11 +2,15 @@
 # Standard Library
 import argparse
 import collections
+import re
+import xml.etree.cElementTree
 # Third Party
 import imdb
 import imdb.helpers
+import mediawiki
 import sqlalchemy
 import sqlalchemy.ext.declarative
+import sqlalchemy.ext.hybrid
 import sqlalchemy.orm
 
 
@@ -44,6 +48,8 @@ class Character(BASE):
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
     role_id = sqlalchemy.Column(sqlalchemy.String, unique=True)
     name = sqlalchemy.Column(sqlalchemy.String)
+    article = sqlalchemy.orm.relationship('Article', uselist=False,
+                                          backref='character')
     appearances = sqlalchemy.orm.relationship('Appearance',
                                               secondary=association_table,
                                               backref='characters')
@@ -57,9 +63,29 @@ class Appearance(BASE):
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
     title = sqlalchemy.Column(sqlalchemy.String)
     kind = sqlalchemy.Column(sqlalchemy.String)
+    article = sqlalchemy.orm.relationship('Article', uselist=False,
+                                          backref='appearance')
 
     def __repr__(self):
         return self.title
+
+
+class Article(BASE):
+    __tablename__ = 'article'
+    id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
+    title = sqlalchemy.Column(sqlalchemy.String)
+    text = sqlalchemy.Column(sqlalchemy.String)
+    character_id = sqlalchemy.Column(sqlalchemy.Integer,
+                                     sqlalchemy.ForeignKey('character.id'))
+    appearance_id = sqlalchemy.Column(sqlalchemy.Integer,
+                                      sqlalchemy.ForeignKey('appearance.id'))
+
+    def __repr__(self):
+        return self.title
+
+    @sqlalchemy.ext.hybrid.hybrid_property
+    def html(self):
+        return mediawiki.wiki2html(self.text, False)
 
 
 class SixDegrees(object):
@@ -135,6 +161,56 @@ class SixDegrees(object):
             self.session.add(appearance)
         return appearance
 
+    def load_ma(self):
+        name_pattern = re.compile(r'(?:\{.*\}){0,1}(.*)')
+        slug_pattern = re.compile(r'[\W_]+')
+        slugs = self.slugs
+        xml_path = 'enmemoryalpha_pages_current.xml'
+        events = ('start', 'end')
+        etree = xml.etree.cElementTree.iterparse(xml_path, events=events)
+        level = -1
+        for event, elem in etree:
+            name = name_pattern.search(elem.tag).groups()[0]
+            if event == 'start':
+                level += 1
+            if level == 2 and event == 'end' and name == 'title':
+                title = elem.text
+            if level == 3 and event == 'end' and name == 'text':
+                text = elem.text
+            if level == 1 and event == 'end':
+                if name == 'page':
+                    slug = slug_pattern.sub('', title).lower()
+                    if slug in slugs:
+                        obj = slugs[slug]
+                        article = Article(title=title, text=text)
+                        if isinstance(obj, Appearance):
+                            article.appearance = obj
+                        else:
+                            article.character = obj
+                        self.session.add(article)
+                        self.session.commit()
+            if event == 'end':
+                level -= 1
+                elem.clear()
+
+    @property
+    def slugs(self):
+        pattern = re.compile(r'[\W_]+')
+        slugs = {}
+        for appearance in self.session.query(Appearance).all():
+            slug = pattern.sub(u'', appearance.title.split('(')[0]).lower()
+            slug = slug.replace(u'part1', u'parti').replace(u'part2', u'partii')
+            if appearance.kind == 'movie':
+                slugs[slug] = appearance
+            else:
+                slug += u'episode'
+                slugs[slug] = appearance
+                if 'parti' in slug:
+                    slugs[slug.replace(u'parti', u'')] = appearance
+        for character in self.session.query(Character).all():
+            slugs[pattern.sub('', character.name).lower()] = character
+        return slugs
+
     def get_character(self, name):
         name_filter = '%{}%'.format(name.replace(' ', '%').replace('.', ''))
         query = self.session.query(Character)
@@ -188,6 +264,9 @@ class SixDegrees(object):
             if end_character in appearance.characters:
                 return appearance
 
+    def find_article(self, obj):
+        pass
+
 
 def _minimum(L):
     smallest = 'z'
@@ -212,7 +291,7 @@ def play():
             if len(full_link):
                 message = '{} has a Kirk Number of {}'
                 print message.format(end_name, len(full_link))
-                previous = end_name
+                previous = character
                 for sublink in full_link:
                     appearance, character = sublink
                     message = '\t{} was in {} with {}.'
@@ -229,7 +308,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     six = SixDegrees()
     if args.load_data:
-#        six.load_imdb()
+        six.load_imdb()
         six.load_ma()
     else:
         play()

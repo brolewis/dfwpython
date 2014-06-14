@@ -18,7 +18,71 @@
                 <ul>
                 {% set previous = end_name %}
                 {% for sublink in full_link %}
-                    <li>{{ previous }} was in {{ sublink[0] }} with {{ sublink[1] }}</li>
+                    <li>
+                        {{ previous }} was in {{ sublink[0] }} with {{ sublink[1] }}
+                        <div class="panel-group" id="{{ sublink[0].id }}">
+                            {% if previous.article %}
+                            <div class="panel panel-default">
+                                <div class="panel-heading">
+                                    <h4 class="panel-title">
+                                        <a data-toggle="collapse" data-parent="{{ sublink[0].id }}" href="#{{ sublink[0].id }}-previous">{{ previous.article }}</a>
+                                    </h4>
+                                </div>
+                                <div id="{{ sublink[0].id}}-previous" class="panel-collapse collapse">
+                                    <div class="panel-body">{{ previous.article.html|safe }}</div>
+                                </div>
+                            </div>
+                            {% endif %}
+                            {% if sublink[0].article %}
+                            <div class="panel panel-default">
+                                <div class="panel-heading">
+                                    <h4 class="panel-title">
+                                        <a data-toggle="collapse" data-parent="{{ sublink[0].id }}" href="#{{ sublink[0].id }}-appearance">{{ sublink[0].article }}</a>
+                                    </h4>
+                                </div>
+                                <div id="{{ sublink[0].id}}-appearance" class="panel-collapse collapse">
+                                    <div class="panel-body">{{ sublink[0].article.html|safe }}</div>
+                                </div>
+                            </div>
+                            {% endif %}
+                            {% if sublink[1].article %}
+                            <div class="panel panel-default">
+                                <div class="panel-heading">
+                                    <h4 class="panel-title">
+                                        <a data-toggle="collapse" data-parent="{{ sublink[0].id }}" href="#{{ sublink[0].id }}-character">{{ sublink[1].article }}</a>
+                                    </h4>
+                                </div>
+                                <div id="{{ sublink[0].id}}-character" class="panel-collapse collapse">
+                                    <div class="panel-body">{{ sublink[1].article.html|safe }}</div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {#                        <div class="well">
+                            <ul class="nav nav-tabs" id="{{ sublink[0].id }}">
+                                {% if previous.article %}
+                                    <li class="active"><a href="#previous">{{ previous.article }}</a></li>
+                                {% endif %}
+                                {% if sublink[0].article %}
+                                    <li{% if not previous.article %} class="active"{% endif %}><a href="#appearance">{{ sublink[0].article }}</a></li>
+                                {% endif %}
+                                {% if sublink[1].article %}
+                                    <li{% if not sublink[0].article %} class="active"{% endif %}><a href="#character">{{ sublink[1].article }}</a></li>
+                                {% endif %}
+                            </ul>
+                            <div class="tab-content" id="{{ sublink[0].id }}Content">
+                                {% if previous.article %}
+                                    <div class="tab-pane active" id="previous">{{ previous.article.text }}</div>
+                                {% endif %}
+                                {% if sublink[0].article %}
+                                    <div class="tab-pane{% if not previous.article %} active{% endif %}" id="appearance">{{ sublink[0].article.text }}</div>
+                                {% endif %}
+                                {% if sublink[1].article %}
+                                    <div class="tab-pane{% if not sublink[0].article %} active{% endif %}" id="character">{{ sublink[1].article.text }}</div>
+                                {% endif %}
+                            </div>
+                        </div>#}
+                    </li>
                     {% set previous = sublink[1] %}
                 {% endfor %}
                 </ul>
@@ -28,4 +92,15 @@
             </div>
         </div>
     </div>
+{% endblock %}
+{% block scripts %}
+    {{ super() }}
+    <script>
+    {% for sublink in full_link %}
+        $('#{{ sublink[0].id }} a').click(function (e) {
+            e.preventDefault()
+            $(this).tab('show')
+        })
+    {% endfor %}
+    </script>
 {% endblock %}
