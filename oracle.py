@@ -69,7 +69,7 @@ class SixDegrees(object):
         self.session = sqlalchemy.orm.sessionmaker(bind=engine)()
         self._role_names = None
 
-    def imdb_load(self):
+    def load_imdb(self):
         access = imdb.IMDb()
         self._role_names = collections.defaultdict(list)
         for series in access.search_movie('Star Trek', results=30):
@@ -229,5 +229,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
     six = SixDegrees()
     if args.load_data:
-        six.imdb_load()
+        six.load_imdb()
     play()
