@@ -1,0 +1,9 @@
+IMDbPY==5.0
+SQLAlchemy==0.9.4
+twisted
+scrapy
+loginform
+lxml
+jsonschema
+-e git://github.com/scrapy/scrapely.git#egg=scrapely
+-e portia/slybot
