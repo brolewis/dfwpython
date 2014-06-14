@@ -1,3 +1,4 @@
 .env
 wikipedia.json
 memory_alpha.xml
+star_trek.sqlite
