@@ -56,6 +56,7 @@ class Appearance(BASE):
     __tablename__ = 'appearance'
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
     title = sqlalchemy.Column(sqlalchemy.String)
+    kind = sqlalchemy.Column(sqlalchemy.String)
 
     def __repr__(self):
         return self.title
@@ -73,15 +74,16 @@ class SixDegrees(object):
         self._role_names = collections.defaultdict(list)
         for series in access.search_movie('Star Trek', results=30):
             title = series['long imdb title']
+            kind = series['kind']
             if title in CANON:
-                if series['kind'] == 'tv series':
+                if kind == 'tv series':
                     title = CANON[title]
                     access.update(series, 'episodes')
                     for episode in imdb.helpers.sortedEpisodes(series):
                         access.update(episode)
-                        self._parse_episode(episode, title)
-                elif series['kind'] == 'movie':
-                    appearance = self._get_or_create_appearance(title=title)
+                        self._parse_episode(episode, title, kind)
+                elif kind == 'movie':
+                    appearance = self._get_appearance(title, kind)
                     movie = access.get_movie(series.movieID)
                     for actor in movie['cast']:
                         self._add_actor(actor, appearance)
@@ -94,9 +96,9 @@ class SixDegrees(object):
             character.name = counter.most_common(1)[0][0]
         self.session.commit()
 
-    def _parse_episode(self, episode, series_title):
+    def _parse_episode(self, episode, series_title, series_kind):
         episode_title = u'{} ({})'.format(episode['title'], series_title)
-        appearance = self._get_or_create_appearance(title=episode_title)
+        appearance = self._get_appearance(episode_title, series_kind)
         for actor in episode['cast']:
             self._add_actor(actor, appearance)
         self.session.add(appearance)
@@ -129,11 +131,11 @@ class SixDegrees(object):
         query = self.session.query(Character)
         return query.filter(Character.name.like(name_filter)).first()
 
-    def _get_or_create_appearance(self, title):
+    def _get_appearance(self, title, kind):
         query = self.session.query(Appearance)
         appearance = query.filter_by(title=title).first()
         if not appearance:
-            appearance = Appearance(title=title)
+            appearance = Appearance(title=title, kind=kind)
             self.session.add(appearance)
         return appearance
 
@@ -163,7 +165,8 @@ class SixDegrees(object):
             character = character_link[distance]
             for appearance in character.appearances:
                 for co_star in appearance.characters:
-                    if co_star not in investigated:
+#                    if co_star not in investigated:
+                    if co_star not in investigated and co_star.name not in ('Enterprise Computer', 'Ensign', 'Starfleet Officer'):
                         if co_star == start_character:
                             character_link.append(co_star)
                             return character_link
@@ -190,6 +193,33 @@ def _minimum(L):
     return smallest
 
 
+def play():
+    while True:
+        start_name = 'Captain James T. Kirk'
+        message = 'Please enter character name (or press Enter to exit): '
+        end_name = raw_input(message)
+        character = six.get_character(end_name)
+        if end_name == '':
+            print 'Thank you for playing!'
+            break
+        elif character.name == start_name:
+            print u'{} has a Kirk Number of 0.'.format(character)
+        else:
+            full_link = six.find_connection(start_name, end_name)
+            if len(full_link):
+                message = '{} has a Kirk Number of {}'
+                print message.format(end_name, len(full_link))
+                previous = end_name
+                for sublink in full_link:
+                    appearance, character = sublink
+                    message = '\t{} was in {} with {}.'
+                    print message.format(previous, appearance, character)
+                    previous = character
+            else:
+                print '{} has a Kirk Number of Infinity.'.format(end_name)
+        print '\n',
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Six Degress of Captain Kirk')
     parser.add_argument('--load_data', action='store_true', help='Query IMDB')
@@ -197,6 +227,4 @@ if __name__ == '__main__':
     six = SixDegrees()
     if args.load_data:
         six.imdb_load()
-    print six.get_character('James T Kirk')
-    print six.get_character('Spock')
-    print six.find_connection('James T Kirk', 'Spock')
+    play()
