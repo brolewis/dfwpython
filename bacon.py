@@ -57,6 +57,9 @@ class Appearance(BASE):
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
     title = sqlalchemy.Column(sqlalchemy.String)
 
+    def __repr__(self):
+        return self.title
+
 
 class SixDegrees(object):
     def __init__(self):
@@ -122,7 +125,7 @@ class SixDegrees(object):
             return character
 
     def get_character(self, name):
-        name_filter = '%{}%'.format(name.replace(' ', '%'))
+        name_filter = '%{}%'.format(name.replace(' ', '%').replace('.', ''))
         query = self.session.query(Character)
         return query.filter(Character.name.like(name_filter)).first()
 
@@ -139,11 +142,10 @@ class SixDegrees(object):
         if not link:
             return link
         complete_link = []
-        for count, present_character in enumerate(link):
+        for count, character in enumerate(link):
             if count:
-                appearance = self._directly_linked_movie(link[count - 1],
-                                                         present_character)
-                complete_link.append((appearance, present_character))
+                appearance = self._direct_link(link[count - 1], character)
+                complete_link.append((appearance, character))
         return complete_link
 
     def _shortest_link(self, start_name, end_name):
@@ -153,7 +155,7 @@ class SixDegrees(object):
         end_character = self.get_character(end_name)
         if not (start_character or end_character):
             return []
-        investigated = [start_character]
+        investigated = [end_character]
         to_investigate = [[end_character]]
         distance = 0
         while to_investigate:
@@ -161,9 +163,10 @@ class SixDegrees(object):
             character = character_link[distance]
             for appearance in character.appearances:
                 for co_star in appearance.characters:
-                    if not (co_star in investigated):
+                    if co_star not in investigated:
                         if co_star == start_character:
-                            character_link.append(co_star.name)
+                            character_link.append(co_star)
+                            return character_link
                         elif co_star not in investigated:
                             investigated.append(co_star)
                             full_link = character_link[:]
@@ -174,7 +177,7 @@ class SixDegrees(object):
                 distance += 1
         return []
 
-    def _directly_linked_movie(self, start_character, end_character):
+    def _direct_link(self, start_character, end_character):
         for appearance in start_character.appearances:
             if end_character in appearance.characters:
                 return appearance
@@ -194,6 +197,6 @@ if __name__ == '__main__':
     six = SixDegrees()
     if args.load_data:
         six.imdb_load()
-    print six.get_character('James%T%Kirk')
+    print six.get_character('James T Kirk')
     print six.get_character('Spock')
-#    print six.find_connection('James T. Kirk', 'Mr. Spock')
+    print six.find_connection('James T Kirk', 'Spock')
