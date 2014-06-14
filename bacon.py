@@ -116,7 +116,8 @@ class SixDegrees(object):
                 appearance.characters.append(character)
 
     def _add_character(self, role):
-        if role.get('name') and role.getID():
+        generic = ('Enterprise Computer', 'Ensign', 'Starfleet Officer')
+        if role.get('name') and role.getID() and role['name'] not in generic:
             self._role_names[role.getID()].append(role['name'])
             query = self.session.query(Character)
             character = query.filter_by(role_id=role.getID()).first()
@@ -130,6 +131,9 @@ class SixDegrees(object):
         name_filter = '%{}%'.format(name.replace(' ', '%').replace('.', ''))
         query = self.session.query(Character)
         return query.filter(Character.name.like(name_filter)).first()
+
+    def all_characters(self):
+        return self.session.query(Character).all()
 
     def _get_appearance(self, title, kind):
         query = self.session.query(Appearance)
@@ -165,8 +169,7 @@ class SixDegrees(object):
             character = character_link[distance]
             for appearance in character.appearances:
                 for co_star in appearance.characters:
-#                    if co_star not in investigated:
-                    if co_star not in investigated and co_star.name not in ('Enterprise Computer', 'Ensign', 'Starfleet Officer'):
+                    if co_star not in investigated:
                         if co_star == start_character:
                             character_link.append(co_star)
                             return character_link
