@@ -85,7 +85,7 @@ class Article(BASE):
 
     @sqlalchemy.ext.hybrid.hybrid_property
     def html(self):
-        return mediawiki.wiki2html(self.text, False)
+        return mediawiki.wiki2html(self.text or '', False)
 
 
 class SixDegrees(object):
