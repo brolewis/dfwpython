@@ -1,3 +1,4 @@
 .env
+*.pyc
 enmemoryalpha_pages_current.xml
 star_trek.sqlite
