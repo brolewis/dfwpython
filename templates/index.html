@@ -15,7 +15,12 @@
 {% endblock %}
 {% block content %}
     <div class="container">
-        <h1>The Oracle of Kirk</h1>
+        <div class="text-center">
+            <h1>The Oracle of Kirk</h1>
+        </div>
+        <div class="row text-center">
+            <img src="{{ url_for('static', filename='khaaan.jpg') }}" class="img-thumbnail img-responsive" alt="Responsive image" />
+        </div>
         <p class="lead">A fun little project to show degrees of separation within the Star Trek Universe</p>
         <div class="jumbotron">
             <form class="form-inline" role="form" action="{{ url_for('index') }}" method="post">
