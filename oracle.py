@@ -2,6 +2,7 @@
 # Standard Library
 import argparse
 import collections
+import os
 import re
 import xml.etree.cElementTree
 # Third Party
@@ -90,7 +91,8 @@ class Article(BASE):
 
 class SixDegrees(object):
     def __init__(self):
-        engine = sqlalchemy.create_engine('sqlite:///star_trek.sqlite')
+        database_uri = os.getenv('DATABASE_URI', 'sqlite:///star_trek.sqlite')
+        engine = sqlalchemy.create_engine(database_uri)
         BASE.metadata.create_all(engine)
         self.session = sqlalchemy.orm.sessionmaker(bind=engine)()
         self._role_names = None
