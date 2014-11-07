@@ -167,7 +167,7 @@ class SixDegrees(object):
         name_pattern = re.compile(r'(?:\{.*\}){0,1}(.*)')
         slug_pattern = re.compile(r'[\W_]+')
         slugs = self.slugs
-        xml_dir = os.path.basename(os.path.realpath(__file__))
+        xml_dir = os.path.dirname(os.path.realpath(__file__))
         xml_path = os.path.join(xml_dir, 'memory_alpha.xml')
         events = ('start', 'end')
         etree = xml.etree.cElementTree.iterparse(xml_path, events=events)
